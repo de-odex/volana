@@ -1,11 +1,16 @@
+# Volana
+I'm still setting things up here, come back at a different time
+Volana is a fork of nimLUA, adding some things I think would be neat and changing some stuff I don't like.
+Naturally, this makes the library relatively opinionated.
+
+---
+
 # nimLua
 glue code generator to bind Nim and Lua together using Nim's powerful macro
 
-[![Build Status (Travis)](https://img.shields.io/travis/jangko/nimLUA/master.svg?label=Linux%20/%20macOS "Linux/macOS build status (Travis)")](https://travis-ci.org/jangko/nimLUA)
-[![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/jangko/nimLUA/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/jangko/nimLUA)
 ![nimble](https://img.shields.io/badge/available%20on-nimble-yellow.svg?style=flat-square)
 ![license](https://img.shields.io/github/license/citycide/cascade.svg?style=flat-square)
-![Github action](https://github.com/jangko/nimLUA/workflows/nimLUA%20CI/badge.svg)
+![Github action](https://github.com/de-odex/volana/workflows/CI/badge.svg)
 - - -
 
 **Features**:
@@ -70,7 +75,7 @@ no need to remember complicated API, the API is simple but powerful
 ### **1. bindEnum**
 
 ```nimrod
-import nimLUA, os
+import volana, os
 
 type
   FRUIT = enum
@@ -153,7 +158,7 @@ assert(NEUTRON == 2)
 ### **2. bindConst**
 
 ```nimrod
-import nimLUA
+import volana
 
 const
   MANGOES = 10.0
@@ -192,7 +197,7 @@ operator `->` have same meaning with bindEnum, to rename exported symbol on Lua 
 bindFunction is an alias to bindProc, they behave identically
 
 ```nimrod
-import nimLUA
+import volana
 
 proc abc(a, b: int): int =
   result = a + b
@@ -213,7 +218,7 @@ operator `->` have same meaning with bindEnum, to rename exported symbol on Lua 
 ### **4. bindObject**
 
 ```nimrod
-import nimLUA
+import volana
 
 type
   Foo = ref object
@@ -473,7 +478,7 @@ nimLUA already provide a default error handler in case you forget to provide one
 still under development, contributions are welcome
 
 ## Installation via nimble
-> nimble install nimLUA
+> nimble install https://github.com/de-odex/volana
 
 ## Override shared library name
 
