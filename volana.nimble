@@ -1,9 +1,10 @@
-packageName   = "nimLUA"
-version       = "0.3.8"
-author        = "Andri Lim"
+packageName   = "volana"
+version       = "0.4.0"
+author        = "Andri Lim, de-odex"
 description   = "glue code generator to bind Nim and Lua together using Nim's powerful macro"
 license       = "MIT"
 skipDirs      = @["test", "scripts"]
+srcDir        = "src"
 
 requires: "nim >= 1.2.2"
 

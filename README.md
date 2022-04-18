@@ -1,11 +1,16 @@
-# nimLua
+# Volana
+I'm still setting things up here, most of everything is still identical to nimLUA, just with different naming.
+Volana is a fork of nimLUA, adding some things I think would be neat and changing some stuff I don't like.
+Naturally, this makes the library relatively opinionated.
+Please note that version numbers will not follow nimLUA. Changes moving forward will not always follow nimLUA.
+
+---
+
 glue code generator to bind Nim and Lua together using Nim's powerful macro
 
-[![Build Status (Travis)](https://img.shields.io/travis/jangko/nimLUA/master.svg?label=Linux%20/%20macOS "Linux/macOS build status (Travis)")](https://travis-ci.org/jangko/nimLUA)
-[![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/jangko/nimLUA/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/jangko/nimLUA)
 ![nimble](https://img.shields.io/badge/available%20on-nimble-yellow.svg?style=flat-square)
 ![license](https://img.shields.io/github/license/citycide/cascade.svg?style=flat-square)
-![Github action](https://github.com/jangko/nimLUA/workflows/nimLUA%20CI/badge.svg)
+![Github action](https://github.com/de-odex/volana/workflows/CI/badge.svg)
 - - -
 
 **Features**:
@@ -37,7 +42,7 @@ glue code generator to bind Nim and Lua together using Nim's powerful macro
 **Current version API**:
 no need to remember complicated API, the API is simple but powerful
 
-* newNimLua
+* newVolana
 * bindEnum
 * bindConst
 * bindFunction/bindProc
@@ -70,7 +75,7 @@ no need to remember complicated API, the API is simple but powerful
 ### **1. bindEnum**
 
 ```nimrod
-import nimLUA, os
+import volana, os
 
 type
   FRUIT = enum
@@ -88,7 +93,7 @@ proc test(L: PState, fileName: string) =
     echo fileName & " .. OK"
 
 proc main() =
-  var L = newNimLua()
+  var L = newVolana()
   L.bindEnum(FRUIT, SUBATOM, GENE)
   L.test("test.lua")
   L.close()
@@ -153,7 +158,7 @@ assert(NEUTRON == 2)
 ### **2. bindConst**
 
 ```nimrod
-import nimLUA
+import volana
 
 const
   MANGOES = 10.0
@@ -163,7 +168,7 @@ const
   connected = true
 
 proc main() =
-  var L = newNimLua()
+  var L = newVolana()
   L.bindConst(MANGOES, PAPAYA, LEMON)
   L.bindConst:
     GREET
@@ -192,12 +197,12 @@ operator `->` have same meaning with bindEnum, to rename exported symbol on Lua 
 bindFunction is an alias to bindProc, they behave identically
 
 ```nimrod
-import nimLUA
+import volana
 
 proc abc(a, b: int): int =
   result = a + b
 
-var L = newNimLua()
+var L = newVolana()
 L.bindFunction(abc)
 L.bindFunction:
   abc -> "cba"
@@ -213,7 +218,7 @@ operator `->` have same meaning with bindEnum, to rename exported symbol on Lua 
 ### **4. bindObject**
 
 ```nimrod
-import nimLUA
+import volana
 
 type
   Foo = ref object
@@ -233,7 +238,7 @@ proc addk(f: Foo, a, b: int): string =
   result = f.name & ": " & $a & " + " & $b & " = " & $(a+b)
 
 proc main() =
-  var L = newNimLua()
+  var L = newVolana()
   L.bindObject(Foo):
     newFoo -> constructor
     addv
@@ -290,7 +295,7 @@ local c = cat.new("fred") --not 'Foo' anymore
 
 both **bindObject** and **bindFunction** and **bindConst** can add member to existing namespace
 
-if you want to turn off this functionality, call **nimLuaOptions**(nloAddMember, false)
+if you want to turn off this functionality, call **volanaOptions**(nloAddMember, false)
 
 ```nimrod
 L.bindObject(Foo): #namespace creation
@@ -411,15 +416,15 @@ assert(b.velocity == 20) -- getter & setter
 
 ## **HOW TO DEBUG**
 
-you can call **nimLuaOptions**(nloDebug, true/false)
+you can call **volanaOptions**(nloDebug, true/false)
 
 ```nimrod
-nimLuaOptions(nloDebug, true) #turn on debug
+volanaOptions(nloDebug, true) #turn on debug
 L.bindEnum:
   GENE
   SUBATOM
 
-nimLuaOptions(nloDebug, false) #turn off debug mode
+volanaOptions(nloDebug, false) #turn off debug mode
 L.bindFunction:
   machine
   engine
@@ -433,10 +438,10 @@ or `throw` when compiled to C++.
 Although Nim compiled to C, Nim have it's own stack frame. Calling lua_error and other functions
 that can throw error will disrupt Nim stack frame, and application will crash.
 
-nimLUA avoid using those dangerous functions and and use it's own set of functions that is considerably
+Volana avoid using those dangerous functions and and use it's own set of functions that is considerably
 safe. those functions are:
 
-| lua | nimLUA |
+| lua | Volana |
 |-----|--------|
 | lua_error | N/A |
 | lua_checkstring | nimCheckString |
@@ -466,14 +471,14 @@ This is actually not a real error handler, because you cannot use raise exceptio
 The purpose of this function is to provide information to user about wrong argument type
 passed from Lua to Nim.
 
-nimLUA already provide a default error handler in case you forget to provide one.
+Volana already provide a default error handler in case you forget to provide one.
 
 ## **HOW TO ACCESS LUA CODE FROM NIM?**
 
 still under development, contributions are welcome
 
 ## Installation via nimble
-> nimble install nimLUA
+> nimble install https://github.com/de-odex/volana
 
 ## Override shared library name
 

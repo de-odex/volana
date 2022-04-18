@@ -1,4 +1,4 @@
-# nimLUA
+# Volana
 # glue code generator to bind Nim and Lua together using Nim's powerful macro
 #
 # Copyright (c) 2015 Andri Lim
@@ -24,7 +24,7 @@
 #
 #-------------------------------------
 
-import macros, nimLUA/lua, strutils
+import macros, volana/lua, strutils
 export lua, macros
 
 type
@@ -136,7 +136,7 @@ proc convOpt(a: NimNode): nlOptions {.compileTime.} =
   of "nloAddMember": result = nloAddMember
   else: result = nloNone
 
-macro nimLuaOptions*(opt: nlOptions, mode: bool): untyped =
+macro volanaOptions*(opt: nlOptions, mode: bool): untyped =
   if $mode == "true":
     gOptions.incl convOpt(opt)
   else:
@@ -762,13 +762,13 @@ proc getClosureEnv(SL, procName: string, ovIdx: int): string {.compileTime.} =
   glue.add "  $1.pop(3)\n" % [SL]
   result = glue
 
-proc nimLuaPanic(L: PState): cint {.cdecl.} =
+proc volanaPanic(L: PState): cint {.cdecl.} =
   echo "panic"
   echo L.toString(-1)
   L.pop(1)
   return 0
 
-proc stdNimLuaErrFunc(ctx: pointer, err: NLError) =
+proc stdVolanaErrFunc(ctx: pointer, err: NLError) =
   echo "$1:$2 warning: $3" % [err.source, $err.currentLine, err.msg]
 
 proc NLSetErrorHandler*(L: PState, errFunc: NLErrorFunc) =
@@ -782,12 +782,12 @@ proc NLSetErrorContext*(L: PState, errCtx: pointer) =
   L.rawSet(LUA_REGISTRYINDEX)
 
 #call this before you use this library
-proc newNimLua*(readOnlyEnum = false): PState =
+proc newVolana*(readOnlyEnum = false): PState =
   var L = newState()
   L.openLibs
-  discard L.atPanic(nimLuaPanic)
+  discard L.atPanic(volanaPanic)
 
-  L.NLSetErrorHandler(stdNimLuaErrFunc)
+  L.NLSetErrorHandler(stdVolanaErrFunc)
   L.NLSetErrorContext(nil)
 
   const roEnum = """
@@ -1820,7 +1820,7 @@ proc bindFunctionImpl*(ctx: proxyDesc): NimNode {.compileTime.} =
 
     let
       procName = getAccQuotedName(n.node, n.lhsKind)
-      glueProc = "nimLUAproxy" & $proxyCount
+      glueProc = "volanaProxy" & $proxyCount
       exportedName = n.name
 
     if n.node.kind == nnkSym:
@@ -2236,7 +2236,7 @@ proc bindObjectImpl*(ctx: proxyDesc): NimNode {.compileTime.} =
 
     let
       procName = getAccQuotedName(n.node, n.lhsKind)
-      glueProc = "nimLUAproxy" & $proxyCount
+      glueProc = "volanaProxy" & $proxyCount
       exportedName = if n.name == "constructor": "new" else: n.name
 
     regs.add "  luaL_Reg(name: \"$1\", fn: $2),\n" % [exportedName, glueProc]
@@ -2258,8 +2258,8 @@ proc bindObjectImpl*(ctx: proxyDesc): NimNode {.compileTime.} =
     for n in ctx.propList:
       let
         propName   = getAccQuotedName(n.node, n.lhsKind)
-        getterProc = "nimLUAgetter" & $proxyCount
-        setterProc = "nimLUAsetter" & $proxyCount
+        getterProc = "volanaGetter" & $proxyCount
+        setterProc = "volanaSetter" & $proxyCount
         subjectT   = getImpl(subject)
         propType   = getPropType(subjectT[2], propName)
 
