@@ -9,7 +9,7 @@ srcDir        = "src"
 requires: "nim >= 1.2.2"
 
 ### Helper functions
-proc test(env, path: string) =
+proc test(defines, path: string) =
   # Compilation language is controlled by TEST_LANG
   var lang = "c"
   if existsEnv"TEST_LANG":
@@ -21,17 +21,24 @@ proc test(env, path: string) =
   else:
     const libm = ""
 
-  when defined(macosx):
-    # nim bug, incompatible pointer assignment
-    # see nim-lang/Nim#16123
-    if lang == "cpp":
-      lang = "c"
+  # nim bug not applicable for 1.2.14
+  # when defined(macosx):
+  #   # nim bug, incompatible pointer assignment
+  #   # see nim-lang/Nim#16123
+  #   if lang == "cpp":
+  #     lang = "c"
 
   if not dirExists "build":
     mkDir "build"
-  exec "nim " & lang & " " & env &
-    " --outdir:build -r --hints:off --warnings:off " &
-    " -d:lua_static_lib --passL:\"-Lexternal -llua " & libm & " \" " & path
+
+  let command = "nim c --backend:" & lang & " " & defines &
+  " --outdir:build -r --hints:off --warnings:off " &
+  " -d:lua_static_lib --passL:\"-Lexternal -llua " & libm & "\" " & path
+
+  echo "running ", command
+
+  exec command
+
 
 task test, "Run all tests":
   test "-d:nimDebugDlOpen", "tests/test_features"
