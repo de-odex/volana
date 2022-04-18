@@ -1,8 +1,8 @@
-import nimLUA, "nimPDF/nimBMP", "nimPDF/nimAES", "nimPDF/nimSHA2", streams, "nimPDF/nimPDF"
+import volana, "nimPDF/nimBMP", "nimPDF/nimAES", "nimPDF/nimSHA2", streams, "nimPDF/nimPDF"
 import basic2d
 
 proc main() =
-  var L = newNimLua()
+  var L = newVolana()
 
   L.bindObject(AESContext -> "AES"):
     initAES
