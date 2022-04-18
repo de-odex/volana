@@ -31,7 +31,7 @@ proc test(defines, path: string) =
   if not dirExists "build":
     mkDir "build"
 
-  let command = "nim c --backend:" & lang & " " & defines &
+  let command = "nim " & lang & " " & defines &
   " --outdir:build -r --hints:off --warnings:off " &
   " -d:lua_static_lib --passC:\"-Lexternal -llua " & libm & "\" --passL:\"-Lexternal -llua " & libm & "\" " & path
 
