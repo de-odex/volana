@@ -142,15 +142,15 @@ jobs:
         if: steps.lua-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          cd volana
-          EXTPATH=./external
+          EXTPATH=volana/external
           mkdir -p "$EXTPATH"
           curl -L https://www.lua.org/ftp/lua-${{ matrix.lua-version }}.tar.gz -o "$EXTPATH/lua-${{ matrix.lua-version }}.tar.gz"
           tar xfz "$EXTPATH/lua-${{ matrix.lua-version }}.tar.gz" -C "$EXTPATH"
-          ln -s "$EXTPATH/lua-${{ matrix.lua-version }}" "$EXTPATH/lua"
+          cd $EXTPATH
+          ln -s "lua-${{ matrix.lua-version }}" "lua"
+          cd ..
           nim e -d:volanaStatic scripts/build.nims
           ls -lah external
-          ls -lah external/lua
           cd ..
   
 
