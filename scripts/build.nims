@@ -24,7 +24,6 @@ type
   FileName = tuple[dir, name, ext: string]
 
 proc getCFiles(dir: string): seq[FileName] =
-  debugEcho dir
   var files = listFiles(dir)
   result = @[]
   for c in files:
@@ -48,10 +47,10 @@ proc objList(staticLib: bool): string =
 
   for x in src:
     let fileName = x.dir / x.name
-    let buildCmd = if staticLib:
+    let buildCmd = if not staticLib:
         "gcc -O2 -Wall $1 $2 -c -o $3.o $3.c $4" % [extraFlag, compatFlag, fileName, linkFlags]
       else:
-        "gcc -O2 -Wall $1 -c -o $2.o $2.c" % [extraFlag, fileName]
+        "gcc -O2 -Wall $1 -c -o $2.o $2.c" % [compatFlag, fileName]
     try:
       exec(buildCmd)
       echo buildCmd
@@ -62,7 +61,9 @@ proc objList(staticLib: bool): string =
   result = toString(objs)
 
 proc makeLib(staticLib: bool) =
-  let linkCmd = if staticLib: 
+  echo "building ", if staticLib: "static" else: "dynamic"
+
+  let linkCmd = if staticLib:
       "ar rcs external/liblua.a " & objList(staticLib)
     else:
       "gcc -shared $4 -o $1$2$3 $5" % [".", $DirSep, LIB_NAME, extraFlag, objList(staticLib)]

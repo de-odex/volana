@@ -33,7 +33,7 @@ proc test(defines, path: string) =
 
   let command = "nim c --backend:" & lang & " " & defines &
   " --outdir:build -r --hints:off --warnings:off " &
-  " -d:lua_static_lib --passL:\"-Lexternal -llua " & libm & "\" " & path
+  " -d:lua_static_lib --passC:\"-Lexternal -llua " & libm & "\" --passL:\"-Lexternal -llua " & libm & "\" " & path
 
   echo "running ", command
 
