@@ -1,4 +1,4 @@
-import ../nimLUA, os, strutils, unittest
+import ../src/volana, os, strutils, unittest
 
 type
   GENE {.pure.} = enum
@@ -385,8 +385,8 @@ proc testFromLua(L: PState) =
   L.pop(1) # pop View Table]#
 
 proc main() =
-  suite "nimLUA test suite":
-    var L = newNimLua()
+  suite "test suite":
+    var L = newVolana()
 
     L.bindConst:
       MANGOES

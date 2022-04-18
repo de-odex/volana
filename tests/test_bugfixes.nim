@@ -1,7 +1,7 @@
 when defined(importLogging):
-  import ../nimLUA, os, sequtils, logging, unittest
+  import ../src/volana, os, sequtils, logging, unittest
 else:
-  import ../nimLUA, os, sequtils, json, random, unittest
+  import ../src/volana, os, sequtils, json, random, unittest
 
 type
   Foo = ref object
@@ -19,7 +19,7 @@ proc addv(f: Foo, a, b: string): string =
 
 proc testBugFixes() =
   suite "bugfixes":
-    var L = newNimLua()
+    var L = newVolana()
 
     L.bindObject(Foo):
       newFoo -> constructor
