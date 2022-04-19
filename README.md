@@ -1,8 +1,12 @@
 # Volana
 I'm still setting things up here, most of everything is still identical to nimLUA, just with different naming.
+
 Volana is a fork of nimLUA, adding some things I think would be neat and changing some stuff I don't like.
 Naturally, this makes the library relatively opinionated.
-Please note that version numbers will not follow nimLUA. Changes moving forward will not always follow nimLUA.
+
+Please note that version numbers or changes moving forward will not always follow nimLUA.
+
+Visit the [wiki](https://github.com/de-odex/volana/wiki) for my plans on this library.
 
 ---
 
