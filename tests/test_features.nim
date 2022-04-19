@@ -1,4 +1,4 @@
-import ../src/volana, os, strutils, unittest
+import volana, os, strutils, unittest
 
 type
   GENE {.pure.} = enum

@@ -1,4 +1,4 @@
-name: nimLUA CI
+name: CI
 on: [push, pull_request]
 
 jobs:
@@ -8,59 +8,47 @@ jobs:
       max-parallel: 20
       matrix:
         branch: [master]
-        target:
-          - os: linux
-            cpu: amd64
-            TEST_LANG: c
-          - os: linux
-            cpu: amd64
-            TEST_LANG: cpp
-          - os: linux
-            cpu: i386
-            TEST_LANG: c
-          - os: linux
-            cpu: i386
-            TEST_LANG: cpp
-          - os: macos
-            cpu: amd64
-            TEST_LANG: c
-          - os: macos
-            cpu: amd64
-            TEST_LANG: cpp
-          - os: windows
-            cpu: amd64
-            TEST_LANG: c
-          - os: windows
-            cpu: amd64
-            TEST_LANG: cpp
-          - os: windows
-            cpu: i386
-            TEST_LANG: c
-          - os: windows
-            cpu: i386
-            TEST_LANG: cpp
+        os:
+          - linux
+          - windows
+        # TODO: reconsider re-enabling other operating systems
+        #  - macos
+        cpu:
+          - amd64
+          - i386
+        nim-compile-lang:
+          - c
+          - cpp
+        nim-version:
+          - 1.2.x
+          - 1.4.x
+          - stable
+        lua-version: # only here for the variable
+          - 5.3.6
+        #exclude:
+        #  - os: macos
+        #    cpu: i386
         include:
-          - target:
-              os: linux
+          - os: linux
             builder: ubuntu-18.04
-          - target:
-              os: macos
-            builder: macos-10.15
-          - target:
-              os: windows
+          - os: windows
             builder: windows-2019
+        #  - os: macos
+        #    builder: macos-10.15
 
-    name: '${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ matrix.target.TEST_LANG }} (${{ matrix.branch }})'
+    name: '${{ matrix.os }}-${{ matrix.cpu }}-nim-${{ matrix.nim-version }}-${{ matrix.nim-compile-lang }} (${{ matrix.branch }})'
     runs-on: ${{ matrix.builder }}
     steps:
-      - name: Checkout nimLUA
+      - name: Checkout
         uses: actions/checkout@v2
         with:
-          path: nimLUA
+          path: volana
           submodules: false
 
+      # TODO: simplify this to make it easier to manage
+
       - name: Install build dependencies (Linux i386)
-        if: runner.os == 'Linux' && matrix.target.cpu == 'i386'
+        if: runner.os == 'Linux' && matrix.cpu == 'i386'
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-fast update -qq
@@ -79,21 +67,15 @@ jobs:
           chmod 755 external/bin/gcc external/bin/g++
           echo '${{ github.workspace }}/external/bin' >> $GITHUB_PATH
 
+
       - name: Restore MinGW-W64 (Windows) from cache
         if: runner.os == 'Windows'
         id: windows-mingw-cache
         uses: actions/cache@v2
         with:
-          path: external/mingw-${{ matrix.target.cpu }}
-          key: 'mingw-${{ matrix.target.cpu }}'
+          path: external/mingw-${{ matrix.cpu }}
+          key: 'mingw-${{ matrix.cpu }}'
 
-      - name: Restore Nim DLLs dependencies (Windows) from cache
-        if: runner.os == 'Windows'
-        id: windows-dlls-cache
-        uses: actions/cache@v2
-        with:
-          path: external/dlls-${{ matrix.target.cpu }}
-          key: 'dlls-${{ matrix.target.cpu }}'
 
       - name: Install MinGW64 dependency (Windows)
         if: >
@@ -102,141 +84,79 @@ jobs:
         shell: bash
         run: |
           mkdir -p external
-          if [[ '${{ matrix.target.cpu }}' == 'amd64' ]]; then
-            MINGW_URL="https://sourceforge.net/projects/mingw-w64/files/Toolchains targetting Win64/Personal Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z"
+          if [[ '${{ matrix.cpu }}' == 'amd64' ]]; then
+            MINGW_URL="https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z"
             ARCH=64
           else
-            MINGW_URL="https://sourceforge.net/projects/mingw-w64/files/Toolchains targetting Win32/Personal Builds/mingw-builds/8.1.0/threads-posix/dwarf/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z"
+            MINGW_URL="https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/8.1.0/threads-posix/dwarf/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z"
             ARCH=32
           fi
-          curl -L "$MINGW_URL" -o "external/mingw-${{ matrix.target.cpu }}.7z"
-          7z x -y "external/mingw-${{ matrix.target.cpu }}.7z" -oexternal/
-          mv external/mingw$ARCH external/mingw-${{ matrix.target.cpu }}
+          curl -L "$MINGW_URL" -o "external/mingw-${{ matrix.cpu }}.7z"
+          7z x -y "external/mingw-${{ matrix.cpu }}.7z" -oexternal/
+          mv external/mingw$ARCH external/mingw-${{ matrix.cpu }}
 
-      - name: Install DLLs dependencies (Windows)
-        if: >
-          steps.windows-dlls-cache.outputs.cache-hit != 'true' &&
-          runner.os == 'Windows'
-        shell: bash
-        run: |
-          mkdir -p external
-          curl -L "https://nim-lang.org/download/windeps.zip" -o external/windeps.zip
-          7z x -y external/windeps.zip -oexternal/dlls-${{ matrix.target.cpu }}
 
       - name: Path to cached dependencies (Windows)
         if: >
           runner.os == 'Windows'
         shell: bash
         run: |
-          echo '${{ github.workspace }}'"/external/mingw-${{ matrix.target.cpu }}/bin" >> $GITHUB_PATH
-          echo '${{ github.workspace }}'"/external/dlls-${{ matrix.target.cpu }}" >> $GITHUB_PATH
+          echo '${{ github.workspace }}'"/external/mingw-${{ matrix.cpu }}/bin" >> $GITHUB_PATH
+          echo '${{ github.workspace }}'"/external/dlls-${{ matrix.cpu }}" >> $GITHUB_PATH
 
-      - name: Setup environment
-        shell: bash
-        run: echo '${{ github.workspace }}/nim/bin' >> $GITHUB_PATH
 
-      - name: Get latest Nim commit hash
-        id: versions
-        shell: bash
-        run: |
-          getHash() {
-            git ls-remote "https://github.com/$1" "${2:-HEAD}" | cut -f 1
-          }
-          nimHash=$(getHash nim-lang/Nim devel)
-          csourcesHash=$(getHash nim-lang/csources)
-          echo "::set-output name=nim::$nimHash"
-          echo "::set-output name=csources::$csourcesHash"
+      #- name: Restore Nim DLLs dependencies (Windows) from cache
+      #  if: runner.os == 'Windows'
+      #  id: windows-dlls-cache
+      #  uses: actions/cache@v2
+      #  with:
+      #    path: external/dlls-${{ matrix.cpu }}
+      #    key: 'dlls-${{ matrix.cpu }}'
 
-      - name: Restore prebuilt Nim from cache
-        id: nim-cache
-        uses: actions/cache@v1
+
+      #- name: Install DLLs dependencies (Windows)
+      #  if: >
+      #    steps.windows-dlls-cache.outputs.cache-hit != 'true' &&
+      #    runner.os == 'Windows'
+      #  shell: bash
+      #  run: |
+      #    mkdir -p external
+      #    curl -L "https://nim-lang.org/download/windeps.zip" -o external/windeps.zip
+      #    7z x -y external/windeps.zip -oexternal/dlls-${{ matrix.cpu }}
+
+
+      - name: Setup Nim
+        uses: jiro4989/setup-nim-action@v1
         with:
-          path: nim
-          key: 'nim-${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ steps.versions.outputs.nim }}'
-
-      - name: Restore prebuilt csources from cache
-        if: steps.nim-cache.outputs.cache-hit != 'true'
-        id: csources-cache
-        uses: actions/cache@v1
-        with:
-          path: csources/bin
-          key: 'csources-${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ steps.versions.outputs.csources }}'
-
-      - name: Checkout Nim csources
-        if: >
-          steps.csources-cache.outputs.cache-hit != 'true' &&
-          steps.nim-cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
-        with:
-          repository: nim-lang/csources
-          path: csources
-          ref: ${{ steps.versions.outputs.csources }}
-
-      - name: Checkout Nim
-        if: steps.nim-cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
-        with:
-          repository: nim-lang/Nim
-          path: nim
-          ref: ${{ steps.versions.outputs.nim }}
-
-      - name: Build Nim and associated tools
-        if: steps.nim-cache.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          ncpu=
-          ext=
-          case '${{ runner.os }}' in
-          'Linux')
-            ncpu=$(nproc)
-            ;;
-          'macOS')
-            ncpu=$(sysctl -n hw.ncpu)
-            ;;
-          'Windows')
-            ncpu=$NUMBER_OF_PROCESSORS
-            ext=.exe
-            ;;
-          esac
-          [[ -z "$ncpu" || $ncpu -le 0 ]] && ncpu=1
-          if [[ ! -e csources/bin/nim$ext ]]; then
-            make -C csources -j $ncpu CC=gcc ucpu='${{ matrix.target.cpu }}'
-          else
-            echo 'Using prebuilt csources'
-          fi
-          cp -v csources/bin/nim$ext nim/bin
-          cd nim
-          nim c koch
-          ./koch boot -d:release
-          ./koch nimble -d:release
-          # clean up to save cache space
-          rm koch
-          rm -rf nimcache
-          rm -rf dist
-          rm -rf .git
+          nim-version: ${{ matrix.nim-version }}
 
       - name: Restore prebuilt Lua from cache
         id: lua-cache
         uses: actions/cache@v1
         with:
-          path: nimLUA/external
-          key: 'lua-${{ matrix.target.os }}-${{ matrix.target.cpu }}'
+          path: volana/external
+          key: 'lua-${{ matrix.lua-version }}-${{ matrix.os }}-${{ matrix.cpu }}'
+
 
       - name : Download and build lualib
         if: steps.lua-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          EXTPATH=nimLUA/external
+          EXTPATH=volana/external
           mkdir -p "$EXTPATH"
-          curl -L https://www.lua.org/ftp/lua-5.3.5.tar.gz -o "$EXTPATH/lua_source.tar.gz"
-          tar xfz "$EXTPATH/lua_source.tar.gz" -C "$EXTPATH"
-          mv "$EXTPATH/lua-5.3.5" "$EXTPATH/lua"
-          cd nimLUA
-          nim e scripts/build_static_lib.nims
+          curl -L https://www.lua.org/ftp/lua-${{ matrix.lua-version }}.tar.gz -o "$EXTPATH/lua-${{ matrix.lua-version }}.tar.gz"
+          tar xfz "$EXTPATH/lua-${{ matrix.lua-version }}.tar.gz" -C "$EXTPATH"
+          cd $EXTPATH
+          ln -s "lua-${{ matrix.lua-version }}" "lua"
           cd ..
+          nim e -d:volanaStatic scripts/build.nims
+          ls -lah external
+          cd ..
+  
 
-      - name: Run nimLUA tests
+      - name: Run tests
         shell: bash
         run: |
-          cd nimLUA
-          env TEST_LANG="${{ matrix.target.TEST_LANG }}" nimble test
+          cd volana
+          env TEST_LANG="${{ matrix.nim-compile-lang }}" nimble test
+

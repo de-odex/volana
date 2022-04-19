@@ -1,7 +1,7 @@
 when defined(importLogging):
-  import ../src/volana, os, sequtils, logging, unittest
+  import volana, os, sequtils, logging, unittest
 else:
-  import ../src/volana, os, sequtils, json, random, unittest
+  import volana, os, sequtils, json, random, unittest
 
 type
   Foo = ref object

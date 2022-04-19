@@ -1,19 +1,15 @@
 import os, strutils
 
-when defined(unix):
-  const
-    extraFlag = "-fPIC" #"-DLUA_BUILD_AS_DLL"
-    compatFlag = "-DLUA_COMPAT_ALL" # or "-DLUA_COMPAT_5_2"
-    linkFlags = ""
-else:
-  when defined(build32):
-    const extraFlag = "-m32"
-  else:
-    const extraFlag = ""
-
-  const
-    compatFlag = "-DLUA_COMPAT_ALL" # or "-DLUA_COMPAT_5_2"
-    linkFlags = ""
+const
+  compatFlag = "-DLUA_COMPAT_ALL" # or "-DLUA_COMPAT_5_2"
+  linkFlags = ""
+  extraFlag = when defined(unix):
+      "-fPIC" #"-DLUA_BUILD_AS_DLL"
+    else:
+      when defined(build32):
+        "-m32"
+      else:
+        ""
 
 when defined(MACOSX):
   const LIB_NAME* = "liblua5.3.dylib"
@@ -28,7 +24,6 @@ type
   FileName = tuple[dir, name, ext: string]
 
 proc getCFiles(dir: string): seq[FileName] =
-  debugEcho dir
   var files = listFiles(dir)
   result = @[]
   for c in files:
@@ -44,20 +39,37 @@ proc toString(names: seq[string]): string =
     result.add c
     result.add " "
 
-let src = getCFiles("external" / "lua" / "src")
-var objs: seq[string] = @[]
+#
 
-for x in src:
-  let fileName = x.dir / x.name
-  let buildCmd = "gcc -O2 -Wall $1 $2 -c -o $3.o $3.c $4" % [extraFlag, compatFlag, fileName, linkFlags]
-  try:
-    exec(buildCmd)
-    echo buildCmd
-    objs.add(fileName & ".o")
-  except:
-    echo "failed to build ", fileName
+proc objList(staticLib: bool): string =
+  let src = getCFiles("external" / "lua" / "src")
+  var objs: seq[string] = @[]
 
-let objList = toString(objs)
-let linkCmd = "gcc -shared $4 -o $1$2$3 $5" % [".", $DirSep, LIB_NAME, extraFlag, objList]
-echo linkCmd
-exec(linkCmd)
+  for x in src:
+    let fileName = x.dir / x.name
+    let buildCmd = if not staticLib:
+        "gcc -O2 -Wall $1 $2 -c -o $3.o $3.c $4" % [extraFlag, compatFlag, fileName, linkFlags]
+      else:
+        "gcc -O2 -Wall $1 -c -o $2.o $2.c" % [compatFlag, fileName]
+    try:
+      exec(buildCmd)
+      echo buildCmd
+      objs.add(fileName & ".o")
+    except:
+      echo "failed to build ", fileName
+
+  result = toString(objs)
+
+proc makeLib(staticLib: bool) =
+  echo "building ", if staticLib: "static" else: "dynamic"
+
+  let linkCmd = if staticLib:
+      "ar rcs external/liblua.a " & objList(staticLib)
+    else:
+      "gcc -shared $4 -o $1$2$3 $5" % [".", $DirSep, LIB_NAME, extraFlag, objList(staticLib)]
+
+  echo linkCmd
+  exec(linkCmd)
+
+makeLib(defined(volanaStatic))
+
